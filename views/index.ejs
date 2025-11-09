@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Luyện Viết Đoạn Văn Từ Anh Sang Việt</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <canvas id="particles"></canvas>
+
+  <div class="container">
+    <h1>Luyện Viết Đoạn Văn</h1>
+
+    <div class="main-content">
+      <div class="vietnamese-text">
+        <p id="typing-text"><%= paragraph %></p>
+      </div>
+
+      <% if (!showFeedback) { %>
+      <form action="/submit" method="POST" class="translate-form">
+        <textarea 
+          name="translation" 
+          placeholder="Nhập bản dịch tiếng Anh của bạn ở đây..." 
+          required
+        ></textarea>
+        <button type="submit">Submit 1 Credit</button>
+      </form>
+      <% } %>
+
+      <% if (showFeedback && feedback) { %>
+      <div class="feedback-box">
+        <h3>Feedback</h3>
+        <p class="good">
+          <%= feedback.correct ? 'Good translation!' : 'Cần cải thiện' %>
+        </p>
+        <p class="comment"><strong>Nhận xét:</strong> <%= feedback.feedback || 'Không có nhận xét.' %></p>
+        <% if (feedback.suggestion && feedback.suggestion.trim() !== '') { %>
+        <p class="suggestion"><strong>Gợi ý:</strong> <%= feedback.suggestion %></p>
+        <% } %>
+        <p class="score">Điểm: <strong><%= feedback.score %>/100</strong></p>
+
+        <% if (!submittedName) { %>
+        <form action="/submit" method="POST" class="name-form">
+          <input type="hidden" name="translation" value="<%= userTranslation %>" />
+          <input 
+            type="text" 
+            name="name" 
+            placeholder="Nhập tên để lên bảng xếp hạng" 
+            required 
+            autocomplete="off"
+          />
+          <button type="submit">Lên Leaderboard</button>
+        </form>
+        <% } else { %>
+        <p class="success">
+          Đã lưu: <strong><%= submittedName %></strong> - <%= feedback.score %> điểm
+        </p>
+        <% } %>
+      </div>
+      <% } %>
+
+      <% if (error) { %>
+      <p class="error"><%= error %></p>
+      <% } %>
+    </div>
+
+    <div class="leaderboard">
+      <h3>Leaderboard</h3>
+      <ol>
+        <% if (leaderboard && leaderboard.length > 0) { %>
+          <% leaderboard.forEach((item, index) => { %>
+            <li>
+              <%= index + 1 %>. <%= item.name %> - 
+              <strong><%= item.score %> điểm</strong> 
+              <small>(<%= item.date %>)</small>
+            </li>
+          <% }) %>
+        <% } else { %>
+          <li>Chưa có người chơi nào!</li>
+        <% } %>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const textElement = document.getElementById('typing-text');
+      const text = textElement.textContent;
+      textElement.textContent = '';
+      let i = 0;
+      const speed = 25;
+
+      function typeWriter() {
+        if (i < text.length) {
+          textElement.textContent += text.charAt(i);
+          i++;
+          setTimeout(typeWriter, speed);
+        }
+      }
+
+      setTimeout(typeWriter, 400);
+
+      const textarea = document.querySelector('textarea');
+      if (textarea) {
+        setTimeout(() => textarea.focus(), 800);
+      }
+    });
+
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+    const particleCount = 80;
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 1.5 - 0.75;
+        this.speedY = Math.random() * 1.5 - 0.75;
+        this.hue = Math.random() * 60 + 200;
+        this.alpha = Math.random() * 0.5 + 0.3;
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+      }
+
+      draw() {
+        ctx.fillStyle = `hsla(${this.hue}, 70%, 60%, ${this.alpha})`;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = `hsla(${this.hue}, 70%, 70%, 0.8)`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    <% if (showFeedback && feedback && feedback.score >= 100) { %>
+      setTimeout(() => {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#fbbf24', '#f59e0b', '#f97316', '#3b82f6']
+        });
+      }, 500);
+    <% } %>
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</body>
+</html>
